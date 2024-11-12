@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 class Solution {
@@ -8,24 +9,44 @@ class Solution {
             // Create a vector to store the result for each query
             vector<int> results;
             
-            // Iterate through each query (max price for the current query)
-            for(const int& max_price: queries) {
-                int max_Beauty = 0; // Initialize the maximum beauty for the current query
-                
-                // Iterate through each item in the items list (price, beauty)
-                for(auto& item: items)  {
-                    int price = item[0], beauty = item[1];
-                    
-                    // If the price is less than or equal to the current query price
-                    // Update maxBeauty if the current item's beauty is greater
-                    max_Beauty = (price <= max_price) ? max(max_Beauty, beauty) : max_Beauty;
+            // Sort the items by price first, and then by beauty in non-increasing order (if price is the same)
+            sort(items.begin(), items.end(), [](const vector<int>& a, const vector<int>& b) {
+                return (a[0] < b[0] || (a[0] == b[0] && a[1] <= b[1]));
+            });
+
+            // Lambda function to find the maximum beauty for a given max price using binary search
+            function<int(int, int, int)> findMaxBeauty = [&](int startIndex, 
+                                                                int endIndex, 
+                                                                int maxPrice) -> int {
+                // Base case: if the search range is invalid (startIndex > endIndex), return 0
+                if (startIndex > endIndex)
+                    return 0;
+
+                // Find the middle index in the current search range
+                int midIndex = (startIndex + endIndex) / 2;
+                int price = items[midIndex][0];  // Price of the item at midIndex
+                int beauty = items[midIndex][1]; // Beauty of the item at midIndex
+
+                // If the price of the current item is less than or equal to the maxPrice, we consider this item
+                if (price <= maxPrice) {
+                    // Recursively search both the left and right sides of the list for items that may have higher beauty
+                    int leftBeauty = findMaxBeauty(startIndex, midIndex - 1, maxPrice);  // Search left half
+                    int rightBeauty = findMaxBeauty(midIndex + 1, endIndex, maxPrice);  // Search right half
+                    // Return the maximum beauty from the current item and the left and right halves
+                    return max(beauty, max(leftBeauty, rightBeauty));
                 }
                 
-                // Add the maximum beauty found for the current query to the result
-                results.emplace_back(max_Beauty);
+                // If the current item's price is higher than the maxPrice, search the left side only
+                return findMaxBeauty(startIndex, midIndex - 1, maxPrice);
+            };
+
+            // For each query, call the findMaxBeauty function to find the max beauty within the given price limit
+            for (const int& maxPrice : queries) {
+                // Append the result of the query to the results vector
+                results.emplace_back(findMaxBeauty(0, items.size() - 1, maxPrice));
             }
 
-            // Return the result for all queries
+            // Return the list of results for all queries
             return results;
         }
 };
