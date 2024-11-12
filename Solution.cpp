@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 using namespace std;
 
 class Solution {
@@ -9,12 +10,26 @@ class Solution {
             // Create a vector to store the result for each query
             vector<int> results;
             
-            // Sort the items by price first, and then by beauty in non-increasing order (if price is the same)
+            // Sort the items by price first, and then by beauty in non-increasing order
+            // (if price is the same, sort by beauty in non-decreasing order)
             sort(items.begin(), items.end(), [](const vector<int>& a, const vector<int>& b) {
                 return (a[0] < b[0] || (a[0] == b[0] && a[1] <= b[1]));
             });
 
-            // Lambda function to find the maximum beauty for a given max price using binary search
+            // Dictionary to store the maximum beauty found for each price point
+            unordered_map<int, int> max_Beauty_At_Price;
+            int max_Beauty = 0;
+            
+            // Iterate through the sorted items to fill in the dictionary
+            for(auto& item: items) {
+                int price = item[0], beauty = item[1];
+                // Update the maximum beauty found so far
+                max_Beauty = max(max_Beauty, beauty);
+                // Store the maximum beauty for this price
+                max_Beauty_At_Price[price] = max_Beauty;
+            }
+
+            // Lambda function to perform binary search to find the maximum beauty for a given maxPrice
             function<int(int, int, int)> findMaxBeauty = [&](int startIndex, 
                                                                 int endIndex, 
                                                                 int maxPrice) -> int {
@@ -22,25 +37,24 @@ class Solution {
                 if (startIndex > endIndex)
                     return 0;
 
-                // Find the middle index in the current search range
+                // Find the middle index of the current search range
                 int midIndex = (startIndex + endIndex) / 2;
                 int price = items[midIndex][0];  // Price of the item at midIndex
                 int beauty = items[midIndex][1]; // Beauty of the item at midIndex
 
                 // If the price of the current item is less than or equal to the maxPrice, we consider this item
                 if (price <= maxPrice) {
-                    // Recursively search both the left and right sides of the list for items that may have higher beauty
-                    int leftBeauty = findMaxBeauty(startIndex, midIndex - 1, maxPrice);  // Search left half
+                    // Recursively search the right half of the list for potentially better items
                     int rightBeauty = findMaxBeauty(midIndex + 1, endIndex, maxPrice);  // Search right half
-                    // Return the maximum beauty from the current item and the left and right halves
-                    return max(beauty, max(leftBeauty, rightBeauty));
+                    // Return the maximum beauty found between the current item and the right half
+                    return max(max_Beauty_At_Price[price], rightBeauty);
                 }
                 
-                // If the current item's price is higher than the maxPrice, search the left side only
+                // If the current item's price is greater than the maxPrice, search the left side
                 return findMaxBeauty(startIndex, midIndex - 1, maxPrice);
             };
 
-            // For each query, call the findMaxBeauty function to find the max beauty within the given price limit
+            // For each query, call the findMaxBeauty function to find the maximum beauty within the given price limit
             for (const int& maxPrice : queries) {
                 // Append the result of the query to the results vector
                 results.emplace_back(findMaxBeauty(0, items.size() - 1, maxPrice));
