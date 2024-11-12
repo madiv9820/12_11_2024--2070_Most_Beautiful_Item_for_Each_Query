@@ -1,4 +1,4 @@
-- ## Linear Search
+- ## Approach 1:- Linear Search
     - ### Problem Intuition
         The task is to find the maximum beauty of items that can be bought given a list of items, where each item has a `price` and a `beauty` value. For each query, which represents the maximum price a user is willing to spend, we need to determine the most beautiful item that can be purchased for that price.
 
