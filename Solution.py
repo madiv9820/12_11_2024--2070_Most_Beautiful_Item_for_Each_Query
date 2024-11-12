@@ -2,23 +2,41 @@ from typing import List
 
 class Solution:
     def maximumBeauty(self, items: List[List[int]], queries: List[int]) -> List[int]:
-        # Initialize an empty list to store the results for each query
+        # Initialize an empty list to store the result for each query
         results = []
+        
+        # Get the number of items
+        num_items = len(items)
+        
+        # Sort the items first by price, then by beauty in case of ties on price
+        items.sort(key = lambda item: (item[0], item[1]))
 
-        # Loop through each query price
-        for max_price in queries:
-            # Initialize the maximum beauty for the current query as 0
-            max_beauty = 0
-            
-            # Loop through each item (price, beauty) in the 'items' list
-            for price, beauty in items:
-                # If the item's price is less than or equal to the current query price
-                if price <= max_price:
-                    # Update max_beauty if the current item's beauty is greater
-                    max_beauty = max(max_beauty, beauty)
-            
-            # Append the result (maximum beauty) for the current query to the 'results' list
-            results.append(max_beauty)
+        # Helper function to perform binary search to find the maximum beauty
+        def findMaxBeauty(startIndex: int, endIndex: int, maxPrice: int) -> int:
+            # Base case: if the search range is invalid (start index is greater than end index), return 0
+            if startIndex > endIndex:
+                return 0
+
+            # Find the middle index of the current range
+            midIndex = (startIndex + endIndex) // 2
+            price, beauty = items[midIndex]
+
+            # If the price of the current item is less than or equal to the max price, we consider it
+            if price <= maxPrice:
+                # Recursively search the left and right halves for potentially higher beauty items
+                leftBeauty = findMaxBeauty(startIndex, midIndex - 1, maxPrice)
+                rightBeauty = findMaxBeauty(midIndex + 1, endIndex, maxPrice)
+
+                # Return the maximum beauty from the current item and the left and right sides
+                return max(beauty, leftBeauty, rightBeauty)
+
+            # If the current item's price is greater than the max price, we only search the left side
+            return findMaxBeauty(startIndex, midIndex - 1, maxPrice)
+
+        # For each query, find the maximum beauty that can be bought with the given max price
+        for maxPrice in queries:
+            # Call the binary search helper function for each query and store the result
+            results.append(findMaxBeauty(0, num_items - 1, maxPrice))
         
         # Return the list of results for all queries
         return results
