@@ -1,66 +1,82 @@
-- ## Approach 1:- Linear Search
+- ## Approach 2:- Binary Search (Time Limit Exceeded)
+    
     - ### Problem Intuition
-        The task is to find the maximum beauty of items that can be bought given a list of items, where each item has a `price` and a `beauty` value. For each query, which represents the maximum price a user is willing to spend, we need to determine the most beautiful item that can be purchased for that price.
+        The problem involves finding the maximum beauty of items that can be bought, where each item has a `price` and a `beauty` value. For each query, which represents the maximum price a user is willing to spend, we need to determine the most beautiful item that can be purchased for that price.
 
     - ### Intuition:
         For each query, we:
-        1. Iterate through the list of items.
-        2. Identify which items have a price less than or equal to the query price.
-        3. Track the maximum beauty among these items.
-        4. After processing all items for a query, store the maximum beauty found for that query.
-
-        This approach is repeated for each query in the list of queries.
+        1. Sort the list of items by price to efficiently search for items that the user can afford.
+        2. Use binary search to find the most expensive item within the price range for each query.
+        3. Recursively search to find the highest beauty item that can be bought for the current price limit, considering both the left and right sides of the array.
 
     - ### Approach
-        1. **Iterate over each query**: For each query (representing the maximum affordable price), we will check all items to see which ones the user can afford.
-        2. **Find the maximum beauty**: For each item, check if the item's price is less than or equal to the query price. If it is, compare the beauty of the item with the current maximum beauty and update it if necessary.
-        3. **Store the result**: After processing all items for a given query, store the result (maximum beauty found for that query).
-        4. **Return the result**: Once all queries have been processed, return the list of results (maximum beauties corresponding to each query).
-
-        This approach ensures that we efficiently calculate the maximum beauty for each query, even though the solution is a brute-force one.
+        1. **Sort the items**: First, we sort the items based on their price. If two items have the same price, they are sorted by beauty in ascending order.
+        2. **Binary Search Helper**: For each query, we perform a binary search to find the highest-priced item within the given maximum price. The binary search works by recursively splitting the range of items to find the maximum beauty.
+            - If the price of the current item is less than or equal to the query price, we compare the beauty of the current item with the best beauty found in the left and right halves of the range.
+            - If the price exceeds the query price, we search only the left half of the range.
+        3. **Recursive Search**: The binary search helper function is called recursively to explore both the left and right ranges for higher beauty items, ultimately returning the maximum beauty found within the valid price range.
+        4. **Repeat for all queries**: We repeat the binary search for each query and store the results.
 
     - ### Time Complexity:
-        - **Outer loop (queries)**: We iterate through all `Q` queries.
-        - **Inner loop (items)**: For each query, we iterate through all `N` items.
-
-        Thus, the overall time complexity is: __O(N * Q)__, where:
+        - **Sorting the Items**: Sorting the list of `N` items by price takes **O(N log N)**.
+        - **Binary Search**: For each query, the binary search operates on the sorted list of `N` items. The binary search takes **O(log N)** time for each query.
+        - **Total Complexity**: If there are `Q` queries, the total time complexity is **O(N log N + Q log N)**, where:
             - `N` is the number of items.
             - `Q` is the number of queries.
 
     - ### Space Complexity:
-        - The space complexity is determined by the storage of the result list (which stores the maximum beauty for each query).
-        - We need `O(Q)` space for storing the results.
-
-        Thus, the space complexity is: __O(Q)__, where `Q` is the number of queries.
-
+        - **Input Data Storage**: We store the `items` list and `queries` list, which take **O(N)** and **O(Q)** space respectively.
+        - **Auxiliary Space for Recursion**: The recursion depth of the binary search is **O(log N)**, which is the maximum space needed for the recursion stack.
+        - **Total Space Complexity**: The overall space complexity is **O(N + Q)**, where:
+        - `N` is the number of items.
+        - `Q` is the number of queries.
+    
     - ### Code
-        - **Python Code**
+        - **Python Solution**
 
             ```python3 []
             class Solution:
                 def maximumBeauty(self, items: List[List[int]], queries: List[int]) -> List[int]:
-                    # Initialize an empty list to store the results for each query
+                    # Initialize an empty list to store the result for each query
                     results = []
+                    
+                    # Get the number of items
+                    num_items = len(items)
+                    
+                    # Sort the items first by price, then by beauty in case of ties on price
+                    items.sort(key = lambda item: (item[0], item[1]))
 
-                    # Loop through each query price
-                    for max_price in queries:
-                        # Initialize the maximum beauty for the current query as 0
-                        max_beauty = 0
-                        
-                        # Loop through each item (price, beauty) in the 'items' list
-                        for price, beauty in items:
-                            # If the item's price is less than or equal to the current query price
-                            if price <= max_price:
-                                # Update max_beauty if the current item's beauty is greater
-                                max_beauty = max(max_beauty, beauty)
-                        
-                        # Append the result (maximum beauty) for the current query to the 'results' list
-                        results.append(max_beauty)
+                    # Helper function to perform binary search to find the maximum beauty
+                    def findMaxBeauty(startIndex: int, endIndex: int, maxPrice: int) -> int:
+                        # Base case: if the search range is invalid (start index is greater than end index), return 0
+                        if startIndex > endIndex:
+                            return 0
+
+                        # Find the middle index of the current range
+                        midIndex = (startIndex + endIndex) // 2
+                        price, beauty = items[midIndex]
+
+                        # If the price of the current item is less than or equal to the max price, we consider it
+                        if price <= maxPrice:
+                            # Recursively search the left and right halves for potentially higher beauty items
+                            leftBeauty = findMaxBeauty(startIndex, midIndex - 1, maxPrice)
+                            rightBeauty = findMaxBeauty(midIndex + 1, endIndex, maxPrice)
+
+                            # Return the maximum beauty from the current item and the left and right sides
+                            return max(beauty, leftBeauty, rightBeauty)
+
+                        # If the current item's price is greater than the max price, we only search the left side
+                        return findMaxBeauty(startIndex, midIndex - 1, maxPrice)
+
+                    # For each query, find the maximum beauty that can be bought with the given max price
+                    for maxPrice in queries:
+                        # Call the binary search helper function for each query and store the result
+                        results.append(findMaxBeauty(0, num_items - 1, maxPrice))
                     
                     # Return the list of results for all queries
                     return results
             ```
-
+        
         - **C++ Solution**
 
             ```C++ []
@@ -70,24 +86,44 @@
                         // Create a vector to store the result for each query
                         vector<int> results;
                         
-                        // Iterate through each query (max price for the current query)
-                        for(const int& max_price: queries) {
-                            int max_Beauty = 0; // Initialize the maximum beauty for the current query
-                            
-                            // Iterate through each item in the items list (price, beauty)
-                            for(auto& item: items)  {
-                                int price = item[0], beauty = item[1];
-                                
-                                // If the price is less than or equal to the current query price
-                                // Update maxBeauty if the current item's beauty is greater
-                                max_Beauty = (price <= max_price) ? max(max_Beauty, beauty) : max_Beauty;
+                        // Sort the items by price first, and then by beauty in non-increasing order (if price is the same)
+                        sort(items.begin(), items.end(), [](const vector<int>& a, const vector<int>& b) {
+                            return (a[0] < b[0] || (a[0] == b[0] && a[1] <= b[1]));
+                        });
+
+                        // Lambda function to find the maximum beauty for a given max price using binary search
+                        function<int(int, int, int)> findMaxBeauty = [&](int startIndex, 
+                                                                            int endIndex, 
+                                                                            int maxPrice) -> int {
+                            // Base case: if the search range is invalid (startIndex > endIndex), return 0
+                            if (startIndex > endIndex)
+                                return 0;
+
+                            // Find the middle index in the current search range
+                            int midIndex = (startIndex + endIndex) / 2;
+                            int price = items[midIndex][0];  // Price of the item at midIndex
+                            int beauty = items[midIndex][1]; // Beauty of the item at midIndex
+
+                            // If the price of the current item is less than or equal to the maxPrice, we consider this item
+                            if (price <= maxPrice) {
+                                // Recursively search both the left and right sides of the list for items that may have higher beauty
+                                int leftBeauty = findMaxBeauty(startIndex, midIndex - 1, maxPrice);  // Search left half
+                                int rightBeauty = findMaxBeauty(midIndex + 1, endIndex, maxPrice);  // Search right half
+                                // Return the maximum beauty from the current item and the left and right halves
+                                return max(beauty, max(leftBeauty, rightBeauty));
                             }
                             
-                            // Add the maximum beauty found for the current query to the result
-                            results.emplace_back(max_Beauty);
+                            // If the current item's price is higher than the maxPrice, search the left side only
+                            return findMaxBeauty(startIndex, midIndex - 1, maxPrice);
+                        };
+
+                        // For each query, call the findMaxBeauty function to find the max beauty within the given price limit
+                        for (const int& maxPrice : queries) {
+                            // Append the result of the query to the results vector
+                            results.emplace_back(findMaxBeauty(0, items.size() - 1, maxPrice));
                         }
 
-                        // Return the result for all queries
+                        // Return the list of results for all queries
                         return results;
                     }
             };
